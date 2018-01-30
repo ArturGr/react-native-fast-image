@@ -1,14 +1,24 @@
 package com.dylanvann.fastimage;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapShader;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
+import android.graphics.Shader;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.Priority;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
 import com.bumptech.glide.load.model.GlideUrl;
+import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.ImageViewTarget;
@@ -139,15 +149,70 @@ class FastImageViewManager extends SimpleViewManager<ImageViewWithUrl> implement
         int viewId = view.getId();
         eventEmitter.receiveEvent(viewId, REACT_ON_LOAD_START_EVENT, new WritableNativeMap());
 
-        Glide
-                .with(view.getContext().getApplicationContext())
-                .load(glideUrl)
-                .dontTransform()
-                .priority(priority)
-                .placeholder(TRANSPARENT_DRAWABLE)
-                .listener(LISTENER)
-                .into(view);
+
+        if(FastImageViewConverter.rounded(source)){
+            Glide
+                    .with(view.getContext().getApplicationContext())
+                    .load(glideUrl)
+                    .transform(new CircleTransform(view.getContext().getApplicationContext()))
+                    .priority(priority)
+                    .placeholder(TRANSPARENT_DRAWABLE)
+                    .listener(LISTENER)
+                    .into(view);
+        }else{
+            Glide
+                    .with(view.getContext().getApplicationContext())
+                    .load(glideUrl)
+                    .dontTransform()
+                    .priority(priority)
+                    .placeholder(TRANSPARENT_DRAWABLE)
+                    .listener(LISTENER)
+                    .into(view);
+        }
+
+
+
     }
+
+    public class CircleTransform extends BitmapTransformation {
+        public CircleTransform(Context context) {
+            super(context);
+        }
+
+        @Override protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
+            return circleCrop(pool, toTransform);
+        }
+
+        private Bitmap circleCrop(BitmapPool pool, Bitmap source) {
+            if (source == null) return null;
+
+            int size = Math.min(source.getWidth(), source.getHeight());
+            int x = (source.getWidth() - size) / 2;
+            int y = (source.getHeight() - size) / 2;
+
+            // TODO this could be acquired from the pool too
+            Bitmap squared = Bitmap.createBitmap(source, x, y, size, size);
+
+            Bitmap result = pool.get(size, size, Bitmap.Config.ARGB_8888);
+            if (result == null) {
+                result = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            }
+
+            Canvas canvas = new Canvas(result);
+            Paint paint = new Paint();
+            paint.setShader(new BitmapShader(squared, BitmapShader.TileMode.CLAMP, BitmapShader.TileMode.CLAMP));
+            paint.setAntiAlias(true);
+            float r = size / 2f;
+            canvas.drawCircle(r, r, r, paint);
+
+            return result;
+        }
+
+        @Override public String getId() {
+            return getClass().getName();
+        }
+    }
+
 
     @ReactProp(name = "resizeMode")
     public void setResizeMode(ImageViewWithUrl view, String resizeMode) {
