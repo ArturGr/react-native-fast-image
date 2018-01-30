@@ -55,6 +55,17 @@ class FastImageViewConverter {
         return priority;
     }
 
+    static Boolean rounded(ReadableMap source) {
+        // Get the priority prop.
+        Boolean rounded = false;
+        try {
+            rounded = source.getBoolean("rounded");
+        } catch (Exception e) {
+            // Noop.
+        }
+        return rounded;
+    }
+
     private static Map<String, ImageView.ScaleType> REACT_RESIZE_MODE_MAP =
             new HashMap<String, ImageView.ScaleType>() {{
                 put("contain", ScaleType.FIT_CENTER);
