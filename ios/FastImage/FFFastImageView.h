@@ -1,8 +1,8 @@
 #import <UIKit/UIKit.h>
 
-#import <SDWebImage/UIImageView+WebCache.h>
-#import <SDWebImage/SDWebImageDownloader.h>
-#import <FLAnimatedImage/FLAnimatedImageView.h>
+#import "UIImageView+WebCache.h"
+#import "SDWebImageDownloader.h"
+#import "FLAnimatedImageView.h"
 
 #import <React/RCTComponent.h>
 #import <React/RCTResizeMode.h>
